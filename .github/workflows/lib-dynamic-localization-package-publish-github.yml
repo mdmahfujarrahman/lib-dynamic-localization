@@ -1,62 +1,49 @@
 name: lib-dynamic-localization Package
 
 on:
-    release:
-        types: [created]
+  release:
+    types: [created]
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Check out repository
-              uses: actions/checkout@v4
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+        env:
+          NODE_ENV: production
+      - name: Cache build output
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            dist
+          key: ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}
 
-            - name: Set up Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 20
-
-            - name: Install dependencies
-              run: npm ci
-
-            - name: Build the project
-              run: npm run build
-              env:
-                  NODE_ENV: production
-
-            - name: Cache build output
-              uses: actions/cache@v3
-              with:
-                  path: |
-                      node_modules
-                      dist
-                  key: ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}
-
-    publish-gpr:
-        needs: build
-        runs-on: ubuntu-latest
-        permissions:
-            contents: read
-            packages: write
-        steps:
-            - name: Check out repository
-              uses: actions/checkout@v4
-
-            - name: Set up Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 20
-                  registry-url: https://npm.pkg.github.com/
-
-            - name: Restore build output
-              uses: actions/cache@v3
-              with:
-                  path: |
-                      node_modules
-                      dist
-                  key: ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}
-
-            - name: Publish to GitHub Packages
-              run: npm publish
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  publish-gpr:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://npm.pkg.github.com/
+      - name: Restore build output
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            dist
+          key: ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -36,13 +36,16 @@ jobs:
         with:
           node-version: 20
           registry-url: https://npm.pkg.github.com/
-      - name: Restore build output
+      - name: Cache build output
         uses: actions/cache@v3
         with:
           path: |
             node_modules
             dist
           key: ${{ runner.os }}-build-${{ hashFiles('package-lock.json') }}
+      - run: npm login --registry=https://npm.pkg.github.com/ --scope=@${{ github.repository_owner }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Authentication with GitHub token
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
